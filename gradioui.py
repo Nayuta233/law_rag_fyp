@@ -6,36 +6,51 @@ import gradio as gr
 from cli import CommandLine, read_yaml_config  # 导入 CommandLine 类
 
 resolutions = ["milvus", "pipeline"]
+languages = ["Chinese", "English"]
+laws = ["data/Chinese_law/criminal_specific_provisions.txt",
+        "data/Chinese_law/criminal_general_provisions.txt",
+        "data/Chinese_law/civil_code_contracts.txt",
+        "data/Chinese_law/civil_code_general_provisions.txt",
+        "data/Chinese_law/civil_code_marriage_and_family.txt",
+        "data/Chinese_law/civil_code_personality_rights.txt",
+        "data/Chinese_law/civil_code_real_rights.txt",
+        "data/Chinese_law/civil_code_succession.txt",
+        "data/Chinese_law/civil_code_tort_liability.txt",
+        "data/Singaporean_law/Penal_Code_1871.txt"
+        ]
 
-build_tasks = ["构建索引", "删除索引"]
-query_tasks = ["提问", "提问+返回检索内容"]
+build_tasks = ["Build up context", "remove context"]
+query_tasks = ["ask", "ask+return retrieved context"]
 
 
 class GradioCommandLine(CommandLine):
-    def __init__(self, cfg):
-        super().__init__(cfg)
+    def __init__(self, cfg, cfg_eng):
+        super().__init__(cfg, cfg_eng)
         self.config_path = cfg
-
+        self.config_eng_path = cfg_eng
     def index(self, task, path, overwrite):
-        if task == "构建索引":
+        if task == "build up context":
             self._executor.build_index(path, overwrite)
-            return "索引构建完成"
-        elif task == "删除索引":
+            return "context built up"
+        elif task == "remove context":
             self._executor.delete_file(path)
-            return "删除索引"
+            return "context removed"
 
     def query(self, task, question):
-        if task == "提问":
+        if task == "ask":
             return self._executor.query(question)
-        elif task == "提问+返回检索内容":
+        elif task == "ask+return retrieved context":
             self._executor.set_debug(True)
             return self._executor.query(question)
 
 
-def initialize_cli(cfg_path, resolution):
+def initialize_cli(cfg_path,cfg_eng_path, resolution, language):
     global cli_instance
-    cli_instance = GradioCommandLine(cfg_path)
-    conf = read_yaml_config(cli_instance.config_path)
+    cli_instance = GradioCommandLine(cfg_path,cfg_eng_path)
+    if language == "Chinese":
+        conf = read_yaml_config(cli_instance.config_path)
+    else:
+        conf = read_yaml_config(cli_instance.config_eng_path)
     if resolution == "milvus":
         cli_instance._executor = MilvusExecutor(conf)
         cli_instance._mode = "milvus"
@@ -43,7 +58,7 @@ def initialize_cli(cfg_path, resolution):
         cli_instance._executor = PipelineExecutor(conf)
         cli_instance._mode = "pipeline"
     cli_instance._executor.build_query_engine()
-    return "CLI 初始化完成"
+    return "CLI initilized"
 
 
 with gr.Blocks() as demo:
@@ -51,20 +66,23 @@ with gr.Blocks() as demo:
     gr.Interface(fn=initialize_cli,
                  inputs=[gr.Textbox(
                      lines=1, value="cfgs/config.yaml"),
-                     gr.Dropdown(resolutions, label="索引类别", value="milvus")],
+                     gr.Textbox(
+                     lines=1, value="cfgs/config_eng.yaml"),
+                     gr.Dropdown(resolutions, label="category", value="milvus"),
+                     gr.Dropdown(languages, label="language", value="Chinese")],
                  outputs="text",
-                 submit_btn="初始化", clear_btn="清空")
-    # 构建索引
+                 submit_btn="initilize", clear_btn="clear")
+    # Build up context
     gr.Interface(fn=lambda command, argument, overwrite: cli_instance.index(command, argument, overwrite),
-                 inputs=[gr.Dropdown(choices=build_tasks, label="选择命令", value="构建索引"),
-                         gr.Textbox(label="路径"), gr.Checkbox(label="覆盖之前索引")], outputs="text",
-                 submit_btn="提交", clear_btn="清空")
+                 inputs=[gr.Dropdown(choices=build_tasks, label="command selection", value="Build up context"),
+                         gr.Dropdown(laws, label="laws", value="data/Chinese_law/criminal_specific_provisions.txt"), gr.Checkbox(label="cover previous context")], outputs="text",
+                 submit_btn="submit", clear_btn="clear")
 
     # 提问
     gr.Interface(fn=lambda command, argument: cli_instance.query(command, argument),
-                 inputs=[gr.Dropdown(choices=query_tasks, label="选择命令", value="提问"),
-                         gr.Textbox(label="问题")], outputs="text",
-                 submit_btn="提交", clear_btn="清空")
+                 inputs=[gr.Dropdown(choices=query_tasks, label="command selection", value="ask"),
+                         gr.Textbox(label="ask")], outputs="text",
+                 submit_btn="submit", clear_btn="clear")
     with open("docs/web_ui.md", "r", encoding="utf-8") as f:
         article = f.read()
     gr.Markdown(article)

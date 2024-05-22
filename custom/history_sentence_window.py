@@ -1,4 +1,5 @@
 """Customize Simple node parser."""
+import pdb
 from typing import Any, Callable, List, Optional, Sequence
 from bisect import bisect_right
 
@@ -67,6 +68,7 @@ class HistorySentenceWindowNodeParser(NodeParser):
         _mapping["baihuaxinwudaishi.txt"] = "新五代史"
         _mapping["baihuayuanshi.txt"] = "元史"
         _mapping["baihuazhoushu.txt"] = "周书"
+        _mapping["criminal_chinese.txt"] = "刑法"
 
         for name in _mapping:
             if name in path:
@@ -129,6 +131,7 @@ class HistorySentenceWindowNodeParser(NodeParser):
     ) -> List[BaseNode]:
         """Build window nodes from documents."""
         all_nodes: List[BaseNode] = []
+        # pdb.set_trace()
         for doc in documents:
             text = doc.text
             title_localizer = self.analyze_titles(text)
@@ -145,6 +148,7 @@ class HistorySentenceWindowNodeParser(NodeParser):
                     id_func=self.id_func,
                 )
                 title = title_localizer.get_title_line(i)
+                pdb.set_trace()
                 if title == None:
                     continue
                 for line_node in line_nodes:
@@ -179,6 +183,7 @@ class TitleLocalizer():
     def get_title_line(self, line_id):
         indices = [title[1] for title in self._titles] 
         index = bisect_right(indices, line_id)
+        pdb.set_trace()
         if index - 1 < 0:
             return None
         return self._titles[index-1]

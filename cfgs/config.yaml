@@ -17,6 +17,7 @@ pipeline:
     collection_name: "history_rag" 
     chunk_size: 500
     retrieve_topk: 8
+lan: Chinese
     
 
 

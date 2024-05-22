@@ -1,0 +1,23 @@
+llm:
+    name: "gpt-4-0125-preview"
+    temperature: 0.01
+embedding:
+    name: "BAAI/bge-base-en-v1.5"
+    dim: 768 
+rerank:
+    name: "BAAI/bge-reranker-large"
+milvus:
+    host: "localhost" 
+    port: "19530"
+    collection_name: "singaporean_law"
+    retrieve_topk: 100
+    window_size: 4
+    rerank_topk: 25
+pipeline:
+    collection_name: "singaporean_law" 
+    chunk_size: 500
+    retrieve_topk: 8
+lan: English
+    
+
+
